@@ -1,0 +1,6 @@
+# If true, music will play automatically when the player joins the game.
+# Allowed values: "true" or "false"
+autoplay: true
+
+# Allowed values: "order" or "random"
+play-mode: random

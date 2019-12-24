@@ -1,0 +1,15 @@
+main: cn.wode490390.nukkit.radio.RadioPlugin
+name: "Radio"
+description: "Radio plugin for Nukkit"
+author: "wode490390"
+website: "http://wode490390.cn/"
+version: "${pom.version}"
+api: ["1.0.0"]
+load: POSTWORLD
+permissions:
+  radio.command:
+    description: Allows the player to use /radio
+    default: true
+  radio.admin.command:
+    description: Allows the player to use /radioadmin
+    default: op
