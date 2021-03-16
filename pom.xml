@@ -7,10 +7,10 @@
     <groupId>cn.wode490390.nukkit</groupId>
     <artifactId>radio</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0-LITE</version>
+    <version>1.1.0</version>
     <name>Radio</name>
     <description>Radio plugin for Nukkit</description>
-    <url>http://wode490390.cn/</url>
+    <url>https://wode490390.cn/</url>
     <inceptionYear>2018</inceptionYear>
 
     <licenses>
@@ -72,7 +72,7 @@
         <dependency>
             <groupId>com.github.goxr3plus</groupId>
             <artifactId>jaudiotagger</artifactId>
-            <version>V2.2.6</version>
+            <version>2.2.7</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -94,7 +94,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.2.4</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -111,7 +111,7 @@
             <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
-                <version>4.0.0</version>
+                <version>4.0.3</version>
                 <executions>
                     <execution>
                         <id>get-the-git-infos</id>

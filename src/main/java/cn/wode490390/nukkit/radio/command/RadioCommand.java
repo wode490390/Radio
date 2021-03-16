@@ -15,11 +15,11 @@ public class RadioCommand extends Command implements PluginIdentifiableCommand {
     private final RadioPlugin plugin;
 
     public RadioCommand(RadioPlugin plugin) {
-        super("radio", "Controls the global radio", "/radio <play|stop>", new String[]{"fm", "music"});
+        super("radio", "Controls the global radio", "/radio [play|stop]", new String[]{"fm", "music"});
         this.setPermission("radio.command");
         this.getCommandParameters().clear();
         this.addCommandParameters("default", new CommandParameter[]{
-                new CommandParameter("operate", false, new String[]{"play", "stop"})
+                CommandParameter.newEnum("operate", new String[]{"play", "stop"}),
         });
         this.plugin = plugin;
     }
@@ -35,11 +35,6 @@ public class RadioCommand extends Command implements PluginIdentifiableCommand {
             return false;
         }
 
-        if (args.length < 1) {
-            sender.sendMessage(new TranslationContainer("commands.generic.usage", this.usageMessage));
-            return false;
-        }
-
         IRadio global = this.plugin.getGlobal();
 
         if (global.getPlaylist().isEmpty()) {
@@ -49,6 +44,12 @@ public class RadioCommand extends Command implements PluginIdentifiableCommand {
 
         if (sender instanceof Player) {
             Player player = (Player) sender;
+
+            if (args.length < 1) {
+                this.plugin.showUI(player);
+                return true;
+            }
+
             switch (args[0].toLowerCase()) {
                 case "play":
                     global.addListener(player);

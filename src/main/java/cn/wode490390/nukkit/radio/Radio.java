@@ -6,23 +6,32 @@ import cn.nukkit.network.protocol.PlaySoundPacket;
 import cn.nukkit.network.protocol.StopSoundPacket;
 import cn.nukkit.utils.TextFormat;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public class Radio implements IRadio {
 
     private byte mode = MODE_ORDER;
     private final List<IMusic> playlist = new ObjectArrayList<>();
 
-    private final Set<Player> listeners = Sets.newHashSet();
+    private final Set<Player> listeners = new HashSet<>();
     private IMusic playing;
     private int index = 0;
-    private static final Timer timer = new Timer("Radio Timer", true);
-    private TimerTask updater;
+    private final List<IMusic> randomPlaylist = new ObjectArrayList<>();
+
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(task -> {
+        Thread thread = new Thread(task, "Radio");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @Override
     public byte getMode() {
@@ -45,6 +54,11 @@ public class Radio implements IRadio {
     }
 
     @Override
+    public IMusic getPlaying() {
+        return this.playing;
+    }
+
+    @Override
     public void next() {
         this.next(false);
     }
@@ -58,27 +72,25 @@ public class Radio implements IRadio {
 
         switch (this.mode) {
             case MODE_RANDOM:
-                this.index = RadioPlugin.getRNG().nextInt(this.playlist.size());
+                if (this.randomPlaylist.isEmpty()) {
+                    this.randomPlaylist.addAll(this.playlist);
+                    Collections.shuffle(this.randomPlaylist, ThreadLocalRandom.current());
+                }
+                this.playing = this.randomPlaylist.remove(this.randomPlaylist.size() - 1);
                 break;
             case MODE_ORDER:
             default:
                 if (++this.index >= this.playlist.size()) {
                     this.index = 0;
                 }
+                this.playing = this.playlist.get(this.index);
                 break;
         }
-        this.playing = this.playlist.get(this.index);
 
         stop(null, players);
         play(this.playing, players);
 
-        this.updater = new TimerTask() {
-            @Override
-            public void run() {
-                Radio.this.next();
-            }
-        };
-        timer.schedule(this.updater, this.playing.getDuration());
+        this.scheduler.schedule((Runnable) this::next, this.playing.getDuration(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -98,6 +110,11 @@ public class Radio implements IRadio {
         if (this.listeners.remove(player)) {
             stop(null, player);
         }
+    }
+
+    @Override
+    public boolean isListened(Player player) {
+        return this.listeners.contains(player);
     }
 
     @Override

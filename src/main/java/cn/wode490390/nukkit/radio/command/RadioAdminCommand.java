@@ -10,6 +10,7 @@ import cn.nukkit.resourcepacks.ResourcePack;
 import cn.nukkit.scheduler.AsyncTask;
 import cn.wode490390.nukkit.radio.RadioPlugin;
 import cn.wode490390.nukkit.radio.resourcepack.MusicResourcePack;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -26,7 +27,7 @@ public class RadioAdminCommand extends Command implements PluginIdentifiableComm
         this.setPermission("radio.admin.command");
         this.getCommandParameters().clear();
         this.addCommandParameters("default", new CommandParameter[]{
-                new CommandParameter("operate", false, new String[]{"dump"})
+                CommandParameter.newEnum("operate", new String[]{"dump"}),
         });
         this.plugin = plugin;
     }

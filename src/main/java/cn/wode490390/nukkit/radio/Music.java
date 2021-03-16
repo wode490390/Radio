@@ -1,7 +1,6 @@
 package cn.wode490390.nukkit.radio;
 
 import com.google.common.base.Preconditions;
-import java.util.Objects;
 
 public class Music implements IMusic {
 
@@ -50,7 +49,7 @@ public class Music implements IMusic {
 
     @Override
     public int hashCode() {
-        return 553 + Objects.hashCode(this.md5);
+        return this.md5.hashCode();
     }
 
     @Override

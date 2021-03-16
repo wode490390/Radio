@@ -2,12 +2,12 @@ package cn.wode490390.nukkit.radio.resourcepack;
 
 import cn.nukkit.resourcepacks.ResourcePack;
 import com.google.common.base.Preconditions;
+
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
@@ -38,13 +38,13 @@ public class MusicResourcePack implements ResourcePack {
         Preconditions.checkArgument(data.length > 0, "Invalid data");
 
         StringBuilder builder = new StringBuilder(36);
-        builder.append(md5.substring(0, 8));
+        builder.append(md5, 0, 8);
         builder.append("-");
-        builder.append(md5.substring(8, 12));
+        builder.append(md5, 8, 12);
         builder.append("-");
-        builder.append(md5.substring(12, 16));
+        builder.append(md5, 12, 16);
         builder.append("-");
-        builder.append(md5.substring(16, 20));
+        builder.append(md5, 16, 20);
         builder.append("-");
         builder.append(md5.substring(20));
         String uuid = builder.toString();
@@ -123,7 +123,7 @@ public class MusicResourcePack implements ResourcePack {
 
     @Override
     public byte[] getPackChunk(int off, int len) {
-        return Arrays.copyOfRange(this.data, off, off + ((this.data.length - off > len) ? len : (this.data.length - off)));
+        return Arrays.copyOfRange(this.data, off, off + (Math.min(this.data.length - off, len)));
     }
 
     @Override
@@ -144,6 +144,6 @@ public class MusicResourcePack implements ResourcePack {
 
     @Override
     public int hashCode() {
-        return 259 + Objects.hashCode(this.uuid);
+        return this.uuid.hashCode();
     }
 }

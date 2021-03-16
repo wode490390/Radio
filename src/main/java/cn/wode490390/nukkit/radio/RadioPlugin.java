@@ -1,10 +1,17 @@
 package cn.wode490390.nukkit.radio;
 
+import cn.nukkit.Player;
 import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.Listener;
+import cn.nukkit.event.player.PlayerFormRespondedEvent;
+import cn.nukkit.event.player.PlayerLocallyInitializedEvent;
 import cn.nukkit.event.player.PlayerQuitEvent;
-import cn.nukkit.event.server.DataPacketReceiveEvent;
-import cn.nukkit.network.protocol.SetLocalPlayerAsInitializedPacket;
+import cn.nukkit.form.element.ElementLabel;
+import cn.nukkit.form.element.ElementToggle;
+import cn.nukkit.form.response.FormResponse;
+import cn.nukkit.form.response.FormResponseCustom;
+import cn.nukkit.form.window.FormWindow;
+import cn.nukkit.form.window.FormWindowCustom;
 import cn.nukkit.plugin.PluginBase;
 import cn.nukkit.resourcepacks.ResourcePack;
 import cn.nukkit.resourcepacks.ResourcePackManager;
@@ -15,7 +22,11 @@ import cn.wode490390.nukkit.radio.resourcepack.MusicResourcePack;
 import cn.wode490390.nukkit.radio.util.MetricsLite;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jaudiotagger.audio.ogg.util.OggInfoReader;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -29,21 +40,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
-import org.jaudiotagger.audio.ogg.util.OggInfoReader;
 
 public class RadioPlugin extends PluginBase implements Listener {
-
-    private static final ThreadLocalRandom RNG = ThreadLocalRandom.current();
 
     private boolean autoplay = true;
 
     private final IRadio global = new Radio();
 
+    private final Long2IntMap uiWindows = new Long2IntOpenHashMap();
+
     @Override
     public void onEnable() {
         try {
-            new MetricsLite(this);
+            new MetricsLite(this, 6082);
         } catch (Throwable ignore) {
 
         }
@@ -78,7 +87,7 @@ public class RadioPlugin extends PluginBase implements Listener {
         HashFunction hasher = Hashing.md5();
         List<ResourcePack> packs = new ObjectArrayList<>();
         try {
-            Files.walk(musicPath, 1).filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) && path.toString().endsWith(".ogg")).forEach(path -> {
+            Files.walk(musicPath, 1).filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) && path.toString().toLowerCase().endsWith(".ogg")).forEach(path -> {
                 try (InputStream fis = Files.newInputStream(path, StandardOpenOption.READ)) {
                     byte[] bytes = new byte[fis.available()];
                     fis.read(bytes);
@@ -129,15 +138,54 @@ public class RadioPlugin extends PluginBase implements Listener {
     }
 
     @EventHandler
-    public void onDataPacketReceive(DataPacketReceiveEvent event) {
-        if (event.getPacket() instanceof SetLocalPlayerAsInitializedPacket && this.autoplay) {
+    public void onPlayerLocallyInitialized(PlayerLocallyInitializedEvent event) {
+        if (this.autoplay) {
             this.global.addListener(event.getPlayer());
         }
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        this.global.removeListener(event.getPlayer());
+        Player player = event.getPlayer();
+        this.global.removeListener(player);
+        this.uiWindows.remove(player.getId());
+    }
+
+    @EventHandler
+    public void onPlayerFormResponded(PlayerFormRespondedEvent event) {
+        Player player = event.getPlayer();
+        long id = player.getId();
+        if (this.uiWindows.get(id) == event.getFormID()) {
+            FormWindow window = event.getWindow();
+            if (window instanceof FormWindowCustom) {
+                FormWindowCustom modalWindow = (FormWindowCustom) window;
+                if (modalWindow.getTitle().equals("Radio Manager")) {
+                    if (!window.wasClosed()) {
+                        FormResponse response = event.getResponse();
+                        if (response instanceof FormResponseCustom) {
+                            FormResponseCustom customResponse = (FormResponseCustom) response;
+                            Object enable = customResponse.getResponse(1);
+                            if (enable instanceof Boolean) {
+                                if ((Boolean) enable) {
+                                    this.global.addListener(player);
+                                } else {
+                                    this.global.removeListener(player);
+                                }
+                            }
+
+                        }
+                    }
+                    this.uiWindows.remove(id);
+                }
+            }
+        }
+    }
+
+    public void showUI(Player player) {
+        this.uiWindows.put(player.getId(), player.showFormWindow(new FormWindowCustom("Radio Manager", Arrays.asList(
+                new ElementLabel("Radio Community Edition"), // 0
+                new ElementToggle("Global Radio", this.global.isListened(player)) // 1
+        ))));
     }
 
     public IRadio getGlobal() {
@@ -145,10 +193,6 @@ public class RadioPlugin extends PluginBase implements Listener {
     }
 
     private void logConfigException(String node, Throwable t) {
-        this.getLogger().alert("An error occurred while reading the configuration '" + node + "'. Use the default value.", t);
-    }
-
-    public static ThreadLocalRandom getRNG() {
-        return RNG;
+        this.getLogger().warning("An error occurred while reading the configuration '" + node + "'. Use the default value.", t);
     }
 }

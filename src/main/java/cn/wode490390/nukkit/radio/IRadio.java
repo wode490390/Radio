@@ -1,6 +1,7 @@
 package cn.wode490390.nukkit.radio;
 
 import cn.nukkit.Player;
+
 import java.util.List;
 
 public interface IRadio {
@@ -16,9 +17,13 @@ public interface IRadio {
 
     void addMusic(IMusic music);
 
+    IMusic getPlaying();
+
     void next();
 
     void addListener(Player player);
 
     void removeListener(Player player);
+
+    boolean isListened(Player player);
 }
